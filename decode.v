@@ -30,7 +30,8 @@ module decode_unit #(parameter CORE = 0, ADDRESS_BITS = 20)(
       rs1_data, rs2_data, rd, 
       extend_imm,
       branch_target, 
-      JAL_target,  
+      JAL_target,
+      INT_target,
       report
 ); 
  
@@ -53,6 +54,7 @@ output [2:0]  funct3;
 output [31:0] extend_imm;
 output [ADDRESS_BITS-1:0] branch_target; 
 output [ADDRESS_BITS-1:0] JAL_target;
+output [ADDRESS_BITS-1:0] INT_target;
 
 input report; 
 
@@ -95,7 +97,7 @@ assign extend_imm         = (extend_sel == 2'b01)? s_imm_32 :
 wire[31:0] uj_imm_32      = {{11{uj_imm[19]}},uj_imm[19:0],1'b0}; 
 assign JAL_target         = uj_imm_32 + PC;
  
-regFile #(32, 5) registers (
+regFile #(32, 5, ADDRESS_BITS) registers (
                 .clock(clock), 
                 .reset(reset), 
                 .read_sel1(rs1), 
@@ -104,7 +106,8 @@ regFile #(32, 5) registers (
                 .write_sel(write_reg), 
                 .write_data(write_data), 
                 .read_data1(rs1_data), 
-                .read_data2(rs2_data)
+                .read_data2(rs2_data),
+                .INT_target(INT_target)
 );
 
 reg [31: 0] cycles; 

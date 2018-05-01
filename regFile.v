@@ -21,10 +21,11 @@
  */
 
 // Parameterized register file
-module regFile #(parameter REG_DATA_WIDTH = 32, REG_SEL_BITS = 5) (
+module regFile #(parameter REG_DATA_WIDTH = 32, REG_SEL_BITS = 5, ADDRESS_BITS=20) (
                 clock, reset, read_sel1, read_sel2,
                 wEn, write_sel, write_data, 
-                read_data1, read_data2
+                read_data1, read_data2,
+                INT_target, INT_write
 );
 
 input clock, reset, wEn; 
@@ -32,6 +33,7 @@ input [REG_DATA_WIDTH-1:0] write_data;
 input [REG_SEL_BITS-1:0] read_sel1, read_sel2, write_sel;
 output[REG_DATA_WIDTH-1:0] read_data1; 
 output[REG_DATA_WIDTH-1:0] read_data2; 
+output reg [ADDRESS_BITS-1:0] INT_target; 
 
 (* ram_style = "distributed" *) 
 reg   [REG_DATA_WIDTH-1:0] register_file[0:(1<<REG_SEL_BITS)-1];
@@ -40,6 +42,8 @@ integer i;
 always @(posedge clock)
     if(reset==1)
         register_file[0] <= 0; 
+    else if (INT_write)
+        INT_target <= write_data[ADDRESS_BITS-1:0];
     else 
         if (wEn & write_sel != 0) register_file[write_sel] <= write_data;
           
