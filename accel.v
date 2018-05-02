@@ -9,7 +9,6 @@
 `include "accel_writeback.v"
 `include "accel_memory.v"
 
-
 /* 
  * accel.v
  *
@@ -21,34 +20,27 @@
  * the issue rounds. The logic is described more but generally allocator is
  * controlling what is running when.
  * 
- * It's possible that we break the positioner unit out of issue, in which case
- * that would also sit and be controlled here. This would unify the scheduling
- * code to mostly one place, which would be a good thing, but it would involve
- * moving a bunch of signals from issue, which would be a significant
- * refactor, so for now it's a TODO.
  */
 
+`define EXTEND_OPCODE 7'b0001011
+
+`define RD_IMAGE_DIM       5'b00000
+`define RD_IMAGE_DEPTH     5'b00001
+`define RD_IMAGE_OFFSET    5'b00010
+`define RD_FILTER_OFFSET   5'b00011
+`define RD_OUTPUT_OFFSET   5'b00100
+`define RD_FILTER_HALFSIZE 5'b00101
+`define RD_FILTER_STRIDE   5'b00110
+`define RD_FILTER_LENGTH   5'b00111
+`define RD_FILTER_BIAS     5'b01000
+`define RD_TRIGGER_ACCEL   5'b11111
+
 module Accel(
-        // We need some signals about the image. Right now, I'm thinking about
-        // putting them in special memory locations and picking them out of
-        // the stream in the "interface" stage.
-        input  wire [ 7:0] image_dim,
-        input  wire [ 8:0] image_depth,
+        input wire [31:0] instruction,
 
-        // The image and filter can be anywhere in main memory, as long as
-        // they are contiguous. We just need to know where each starts.
-        input  wire [15:0] image_memory_offset,
-        input  wire [15:0] filter_memory_offset,
-        input  wire [15:0] output_memory_offset,
-        
-        // Constant information about the filter, which will be distributed
-        // throughout the chip.
-        input  wire [ 1:0] filter_halfsize,
-        input  wire [ 2:0] filter_stride,
-        input  wire [12:0] filter_length,
-        input  wire [17:0] filter_bias,
+        output reg [19:0] accel_interrupt,
 
-        input  wire [15:0] interface_write_addr,
+        input  wire [31:0] interface_write_addr,
         input  wire [17:0] interface_write_data,
         input  wire        interface_write_en,
     
@@ -56,8 +48,69 @@ module Accel(
         output wire        accel_done,
 
         input  wire        clk,
-        input  wire        rst
+        input  wire        rst_ext
     );
+
+    reg [7:0] image_dim;
+    reg [8:0] image_depth;
+
+    reg [19:0] image_memory_offset;
+    reg [19:0] filter_memory_offset;
+    reg [19:0] output_memory_offset;
+
+    reg [1:0] filter_halfsize;
+    reg [2:0] filter_stride;
+    reg [12:0] filter_length;
+    reg [17:0] filter_bias;
+
+    wire [6:0] instruction_opcode;
+    wire [4:0] instruction_rd;
+    wire [18:0] instruction_imm19;
+    assign instruction_opcode = instruction[6:0];
+    assign instruction_rd = instruction[11:7];
+    assign instruction_imm19 = instruction[31:12];
+
+    reg rst;
+
+    always @(posedge clk) begin
+        if (rst_ext) begin
+            rst <= 1;
+        end else if (instruction_opcode == `EXTEND_OPCODE) begin
+            if (instruction_rd == `RD_IMAGE_DIM) begin
+                image_dim <= instruction_imm19[7:0];
+            end
+            else if (instruction_rd == `RD_IMAGE_DEPTH) begin
+                image_depth <= instruction_imm19[8:0];
+            end
+            else if (instruction_rd == `RD_IMAGE_OFFSET) begin
+                image_memory_offset <= instruction_imm19[19:0];
+            end
+            else if (instruction_rd == `RD_FILTER_OFFSET) begin
+                filter_memory_offset <= instruction_imm19[19:0];
+            end
+            else if (instruction_rd == `RD_OUTPUT_OFFSET) begin
+                output_memory_offset <= instruction_imm19[19:0];
+            end
+            else if (instruction_rd == `RD_FILTER_HALFSIZE) begin
+                filter_halfsize <= instruction_imm19[1:0];
+            end
+            else if (instruction_rd == `RD_FILTER_STRIDE) begin
+                filter_stride <= instruction_imm19[2:0];
+            end
+            else if (instruction_rd == `RD_FILTER_LENGTH) begin
+                filter_length <= instruction_imm19[12:0];
+            end
+            else if (instruction_rd == `RD_FILTER_BIAS) begin
+                filter_bias <= instruction_imm19[17:0];
+            end
+            else if (instruction_rd == `RD_FILTER_BIAS) begin
+                filter_bias <= instruction_imm19[17:0];
+            end
+            else if (instruction_rd == `RD_TRIGGER_ACCEL) begin
+                rst <= 0;
+            end
+        end
+    end
 
     // Reset control for the positioner. Positioner should start off, turn on
     // when we begin working on an (image, filter) pair, walk through one or

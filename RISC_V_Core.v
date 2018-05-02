@@ -99,6 +99,9 @@ reg  [1:0]   to_peripheral;
 reg  [31:0]  to_peripheral_data; 
 reg          to_peripheral_valid;
 
+Accel accel (
+);
+
 fetch_unit #(CORE, DATA_WIDTH, INDEX_BITS, OFFSET_BITS, ADDRESS_BITS) IF (
         .clock(clock), 
         .reset(reset), 
