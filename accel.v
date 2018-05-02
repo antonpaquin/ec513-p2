@@ -53,9 +53,9 @@ module Accel(
     reg [7:0] image_dim;
     reg [8:0] image_depth;
 
-    reg [19:0] image_memory_offset;
-    reg [19:0] filter_memory_offset;
-    reg [19:0] output_memory_offset;
+    reg [18:0] image_memory_offset;
+    reg [18:0] filter_memory_offset;
+    reg [18:0] output_memory_offset;
 
     reg [1:0] filter_halfsize;
     reg [2:0] filter_stride;
@@ -82,13 +82,13 @@ module Accel(
                 image_depth <= instruction_imm19[8:0];
             end
             else if (instruction_rd == `RD_IMAGE_OFFSET) begin
-                image_memory_offset <= instruction_imm19[19:0];
+                image_memory_offset <= instruction_imm19;
             end
             else if (instruction_rd == `RD_FILTER_OFFSET) begin
-                filter_memory_offset <= instruction_imm19[19:0];
+                filter_memory_offset <= instruction_imm19;
             end
             else if (instruction_rd == `RD_OUTPUT_OFFSET) begin
-                output_memory_offset <= instruction_imm19[19:0];
+                output_memory_offset <= instruction_imm19;
             end
             else if (instruction_rd == `RD_FILTER_HALFSIZE) begin
                 filter_halfsize <= instruction_imm19[1:0];
