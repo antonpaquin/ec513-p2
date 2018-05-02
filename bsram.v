@@ -32,6 +32,10 @@ module BSRAM #(parameter CORE = 0, DATA_WIDTH = 32, ADDR_WIDTH = 8) (
         writeEnable,
         writeAddress,
         writeData, 
+
+        accel_mem_in,
+        accel_mem_out,
+
         report
 ); 
 
@@ -45,6 +49,10 @@ output [DATA_WIDTH-1:0]  readData;
 input writeEnable;
 input [ADDR_WIDTH-1:0]   writeAddress;
 input [DATA_WIDTH-1:0]   writeData;
+
+input [106:0] accel_mem_in;
+output [35:0] accel_mem_out;
+
 input report; 
  
 wire [DATA_WIDTH-1:0]     readData;
@@ -56,6 +64,34 @@ assign readData = (readEnable & writeEnable & (readAddress == writeAddress))?
 
 initial begin
     $readmemh("program.mem", sram);
+end
+
+wire [20:0] accel_imem_read_addr;
+wire [17:0] accel_imem_read_data;
+
+wire [15:0] accel_fmem_read_addr;
+wire [17:0] accel_fmem_read_data;
+
+wire [15:0] accel_omem_write_addr;
+wire [17:0] accel_omem_write_data;
+wire        accel_omem_write_en;
+
+assign accel_imem_read_addr = accel_mem_in[106:86];
+assign accel_imem_read_data = sram[accel_imem_read_addr][17:0];
+
+assign accel_fmem_read_addr = accel_mem_in[85:70];
+assign accel_fmem_read_data = sram[accel_fmem_read_addr][17:0];
+
+assign accel_omem_write_addr = accel_mem_in[69:54];
+assign accel_omem_write_data = accel_mem_in[53:36];
+assign accel_omem_write_en = accel_mem_in[35];
+
+assign accel_mem_out = {accel_imem_read_data, accel_fmem_read_data};
+
+always @(posedge clock) begin
+    if (accel_omem_write_en) begin
+        sram[accel_omem_write_addr] <= accel_omem_write_data;
+    end
 end
 
 always@(posedge clock) begin : RAM_WRITE

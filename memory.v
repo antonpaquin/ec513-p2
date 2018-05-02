@@ -30,6 +30,9 @@ module memory_unit #(parameter CORE = 0, DATA_WIDTH = 32, INDEX_BITS = 6,
         load_data,
         valid, 
         ready, 
+
+        accel_mem_in,
+        accel_mem_out,
         report
 ); 
 
@@ -38,6 +41,9 @@ input load, store;
 input [ADDRESS_BITS-1:0] address;
 input [DATA_WIDTH-1:0]   store_data;
 input report;
+
+input [106:0] accel_mem_in;
+output [35:0] accel_mem_out;
 
 output [ADDRESS_BITS-1:0] data_addr;
 output [DATA_WIDTH-1:0]   load_data;
@@ -56,6 +62,10 @@ mem_interface #(CORE, DATA_WIDTH, INDEX_BITS, OFFSET_BITS, ADDRESS_BITS)
                      .out_data(load_data), 
                      .valid(valid), 
                      .ready(ready),
+
+                     .accel_mem_in(accel_mem_in),
+                     .accel_mem_out(accel_mem_out),
+
                      .report(report)
 );
 

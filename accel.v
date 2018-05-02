@@ -7,7 +7,6 @@
 `include "accel_positioner.v"
 `include "accel_allocator.v"
 `include "accel_writeback.v"
-`include "accel_memory.v"
 
 /* 
  * accel.v
@@ -33,16 +32,16 @@
 `define RD_FILTER_STRIDE   5'b00110
 `define RD_FILTER_LENGTH   5'b00111
 `define RD_FILTER_BIAS     5'b01000
+`define RD_ACCEL_INTERRUPT 5'b01001
 `define RD_TRIGGER_ACCEL   5'b11111
 
 module Accel(
         input wire [31:0] instruction,
 
-        output reg [19:0] accel_interrupt,
+        output reg [18:0] accel_interrupt,
 
-        input  wire [31:0] interface_write_addr,
-        input  wire [17:0] interface_write_data,
-        input  wire        interface_write_en,
+        output wire [106:0] mem_out, // compressed signals from elsewhere
+        input  wire [35:0] mem_in,
     
         // Done signal for when this (image, filter) pair has been completed
         output wire        accel_done,
@@ -105,6 +104,9 @@ module Accel(
             end
             else if (instruction_rd == `RD_FILTER_BIAS) begin
                 filter_bias <= instruction_imm19[17:0];
+            end
+            else if (instruction_rd == `RD_ACCEL_INTERRUPT) begin
+                accel_interrupt <= instruction_imm19;
             end
             else if (instruction_rd == `RD_TRIGGER_ACCEL) begin
                 rst <= 0;
@@ -334,10 +336,14 @@ module Accel(
         .rst(rst | writeback_rst)
     );
     
+    assign mem_out = {imem_read_addr_phys, fmem_read_addr_phys, omem_write_addr_phys, omem_write_data, omem_write_en, 35'b0};
+    assign imem_read_data = mem_in[35:18];
+    assign fmem_read_data = mem_in[17:0];
     // Simple memory unit. We'll probably expose the write lines to the
     // interface module.
     // If we move to multiple broadcast stages, this will become more
     // interesting.
+    /*
     Memory memory (
         .read_addr_a(imem_read_addr_phys),
         .read_data_a(imem_read_data),
@@ -355,6 +361,7 @@ module Accel(
 
         .clk(clk)
     );
+    */
     
 
 endmodule

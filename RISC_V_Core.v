@@ -99,7 +99,22 @@ reg  [1:0]   to_peripheral;
 reg  [31:0]  to_peripheral_data; 
 reg          to_peripheral_valid;
 
+wire [19:0] accel_interrupt_dest;
+wire accel_interrupt_sel;
+wire [106:0] accel_mem_A;
+wire [35:0] accel_mem_B;
+
 Accel accel (
+    .instruction(instruction),
+    .accel_interrupt(accel_interrupt_dest),
+    
+    .mem_out(accel_mem_A),
+    .mem_in(accel_mem_B),
+
+    .accel_done(accel_interrupt_sel),
+    
+    .clk(clock),
+    .rst_ext(reset)
 );
 
 fetch_unit #(CORE, DATA_WIDTH, INDEX_BITS, OFFSET_BITS, ADDRESS_BITS) IF (
@@ -113,6 +128,9 @@ fetch_unit #(CORE, DATA_WIDTH, INDEX_BITS, OFFSET_BITS, ADDRESS_BITS) IF (
         .JALR_target(JALR_target),
         .branch(branch), 
         .branch_target(branch_target), 
+
+        .accel_interrupt(accel_interrupt_dest),
+        .accel_interrupt_sel(accel_interrupt_sel),
         
         .instruction(instruction), 
         .inst_PC(inst_PC),
@@ -200,6 +218,9 @@ memory_unit #(CORE, DATA_WIDTH, INDEX_BITS, OFFSET_BITS, ADDRESS_BITS) MU (
         .load_data(memory_data),
         .valid(d_valid),
         .ready(d_ready),
+
+        .accel_mem_in(accel_mem_A),
+        .accel_mem_out(accel_mem_B),
         
         .report(report)
 ); 

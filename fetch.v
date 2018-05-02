@@ -29,7 +29,7 @@ module fetch_unit #(parameter CORE = 0, DATA_WIDTH = 32, INDEX_BITS = 6,
         JAL_target,
         JALR_target,
         accel_interrupt,
-        INT_target,
+        accel_interrupt_sel,
         branch,
         branch_target, 
         
@@ -46,8 +46,8 @@ input [1:0] PC_select;
 input [ADDRESS_BITS-1:0] program_address;
 input [ADDRESS_BITS-1:0] JAL_target;
 input [ADDRESS_BITS-1:0] JALR_target;
-intput accel_interrupt;
-input [ADDRESS_BITS-1:0] INT_target;
+input [19:0] accel_interrupt;
+input accel_interrupt_sel;
 input branch;
 input [ADDRESS_BITS-1:0] branch_target;
 input report;
@@ -99,7 +99,7 @@ always @ (posedge clock) begin
         end 
         else begin 
             fetch        <= 1;
-            PC_reg       <= (accel_interrupt) ? INT_target :
+            PC_reg       <= (accel_interrupt_sel) ? accel_interrupt :
                             (PC_select == 2'b10)?  JAL_target: 
                             (PC_select == 2'b11)?  JALR_target: 
                             ((PC_select == 2'b01)& branch)?  branch_target : PC_plus4;  

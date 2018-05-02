@@ -24,6 +24,7 @@ module mem_interface #(parameter CORE = 0, DATA_WIDTH = 32, INDEX_BITS = 6,
                      clock, reset,  
                      read, write, address, in_data, 
                      out_addr, out_data, valid, ready,
+                     accel_mem_in, accel_mem_out,
                      report
 );
 
@@ -31,6 +32,9 @@ input clock, reset;
 input read, write;
 input [ADDRESS_BITS-1:0] address;
 input [DATA_WIDTH-1:0]   in_data;
+input [106:0] accel_mem_in;
+
+output [35:0] accel_mem_out;
 output valid, ready;
 output[ADDRESS_BITS-1:0] out_addr;
 output[DATA_WIDTH-1:0]   out_data;
@@ -48,6 +52,12 @@ BSRAM #(CORE, DATA_WIDTH, ADDRESS_BITS) RAM (
         .writeEnable(write),
         .writeAddress(address),
         .writeData(in_data),
+        
+        // Yes, this is a hacky thing that kills the simplicity of the BSRAM
+        // module. There is some motion to put computation alongside memory,
+        // though, which makes this a little bit less horrifying.
+        .accel_mem_in(accel_mem_in),
+        .accel_mem_out(accel_mem_out),
 
         .report(report)
 ); 
