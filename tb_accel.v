@@ -15,38 +15,24 @@ module main();
     reg clk;
     reg rst;
 
+    reg [31:0] instruction;
+
+    wire [18:0] accel_interrupt;
+
+    wire [106:0] mem_out;
+    wire [35:0] mem_in;
+
     wire done;
 
     Accel uut (
-        .image_dim(8'd5), // (x,y) = 5x5
-        .image_depth(9'd3), // z = 3
-        
-        // Image memory is stored at index 0
-        .image_memory_offset(16'd0),
-        // Filter memory is stored at index 1000
-        .filter_memory_offset(16'd1000),
-        // Output at 1100
-        .output_memory_offset(16'd1100),
-        // This is completely arbitrary
-        
-        .filter_halfsize(2'd1), // 3x3 filter
-        .filter_stride(3'd1), // Stride of 1
-
-        // 3x3x3 filter has length 27
-        // NOTE! This is denormalized -- we could compute this somewhere, but
-        // in order to avoid generating a big multiplier we'll just require
-        // that the CPU compute it for us.
-        // This value should be image_depth * ((2*filter_halfsize + 1)^2)
-        .filter_length(13'd27), 
-
-        // Bias to add to the filter values at the end
-        // This currently isn't hooked up anywhere (bad?)
-        .filter_bias(18'd100),
-        
+        .instruction(instruction),
+        .accel_interrupt(accel_interrupt),
+        .mem_out(mem_out),
+        .mem_in(mem_in),
         .accel_done(done),
 
         .clk(clk),
-        .rst(rst)
+        .rst_ext(rst)
     );
 
     initial begin
